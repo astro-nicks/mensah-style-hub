@@ -56,13 +56,15 @@ async function j<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 // Convert relative image URLs from API into absolute
-// Uses the built-in image proxy (/__image-proxy/) to handle CORS issues
+// API images may not exist (Hackathon limitation), so we use a fallback strategy:
+// 1. Try API proxy first (for when real images are uploaded)
+// 2. ProductImage component shows gradient placeholder if 404
 export const imageUrl = (u?: string) => {
   if (!u) return "";
   if (u.startsWith("http")) return u;
   
-  // Use internal proxy to avoid CORS issues
-  // /__image-proxy/ + API path
+  // Try the internal proxy (for when API has images)
+  // If images don't exist (404), ProductImage will show gradient
   return `/__image-proxy/${u.startsWith("/") ? u.slice(1) : u}`;
 };
 
