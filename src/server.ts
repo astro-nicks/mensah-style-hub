@@ -66,9 +66,51 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
   return brandedErrorResponse();
 }
 
+const API_BASE = "https://api-hackathon.codedematrixtech.com";
+
+// Proxy for API images to bypass CORS issues
+async function handleImageProxy(request: Request): Promise<Response | null> {
+  const url = new URL(request.url);
+  
+  if (!url.pathname.startsWith("/__image-proxy/")) {
+    return null;
+  }
+
+  // Extract the API path from /__image-proxy/<path>
+  const apiPath = url.pathname.replace("/__image-proxy/", "/");
+
+  try {
+    const apiUrl = `${API_BASE}${apiPath}`;
+    const response = await fetch(apiUrl);
+
+    if (!response.ok) {
+      return new Response("Image not found", { status: 404 });
+    }
+
+    const buffer = await response.arrayBuffer();
+    const contentType = response.headers.get("content-type") || "image/jpeg";
+
+    return new Response(buffer, {
+      status: 200,
+      headers: {
+        "content-type": contentType,
+        "cache-control": "public, max-age=31536000, immutable",
+        "access-control-allow-origin": "*",
+      },
+    });
+  } catch (error) {
+    console.error("Image proxy error:", error);
+    return new Response("Failed to proxy image", { status: 500 });
+  }
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      // Handle image proxy requests
+      const imageResponse = await handleImageProxy(request);
+      if (imageResponse) return imageResponse;
+
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);

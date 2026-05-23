@@ -55,9 +55,18 @@ async function j<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-// Convert relative image URLs from API into absolute URLs
-export const imageUrl = (u?: string) =>
-  !u ? "" : u.startsWith("http") ? u : `${API_BASE}${u}`;
+// Convert relative image URLs from API into absolute
+// API images may not exist (Hackathon limitation), so we use a fallback strategy:
+// 1. Try API proxy first (for when real images are uploaded)
+// 2. ProductImage component shows gradient placeholder if 404
+export const imageUrl = (u?: string) => {
+  if (!u) return "";
+  if (u.startsWith("http")) return u;
+  
+  // Try the internal proxy (for when API has images)
+  // If images don't exist (404), ProductImage will show gradient
+  return `/__image-proxy/${u.startsWith("/") ? u.slice(1) : u}`;
+};
 
 export const fetchMerchant = () => j<Merchant>(`/merchants/${MERCHANT_ID}`);
 export const fetchItems = () => j<Item[]>(`/merchants/${MERCHANT_ID}/items`);
