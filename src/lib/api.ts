@@ -56,8 +56,15 @@ async function j<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 // Convert relative image URLs from API into absolute
-export const imageUrl = (u?: string) =>
-  !u ? "" : u.startsWith("http") ? u : `${API_BASE}${u}`;
+// Uses the built-in image proxy (/__image-proxy/) to handle CORS issues
+export const imageUrl = (u?: string) => {
+  if (!u) return "";
+  if (u.startsWith("http")) return u;
+  
+  // Use internal proxy to avoid CORS issues
+  // /__image-proxy/ + API path
+  return `/__image-proxy/${u.startsWith("/") ? u.slice(1) : u}`;
+};
 
 export const fetchMerchant = () => j<Merchant>(`/merchants/${MERCHANT_ID}`);
 export const fetchItems = () => j<Item[]>(`/merchants/${MERCHANT_ID}/items`);

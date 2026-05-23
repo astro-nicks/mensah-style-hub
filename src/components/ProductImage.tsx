@@ -15,6 +15,8 @@ export function ProductImage({
 }) {
   const [failed, setFailed] = useState(false);
   const abs = imageUrl(src);
+  
+  // Handle CORS issues by adding crossOrigin attribute
   const showFallback = !abs || failed;
 
   // Deterministic warm gradient per product
@@ -46,6 +48,7 @@ export function ProductImage({
       alt={alt}
       onError={() => setFailed(true)}
       loading="lazy"
+      crossOrigin="anonymous"
       className={`object-cover ${className}`}
     />
   );
