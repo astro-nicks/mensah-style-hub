@@ -29,7 +29,7 @@ export function Header() {
               key={n.to}
               to={n.to}
               className="link-underline"
-              data-active={path === n.to || (n.to !== "/" && path.startsWith(n.to))}
+              data-active={path === (n.to as string) || path.startsWith(n.to)}
             >
               {n.label}
             </Link>
