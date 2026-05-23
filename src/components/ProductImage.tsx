@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { imageUrl } from "@/lib/api";
+import { getPlaceholderImage } from "@/lib/placeholder-images";
 
-// Product images from the hackathon API.
-// Falls back to gradient with product name if image unavailable.
+// Product images from the hackathon API with Unsplash placeholder fallback.
+// 1. Try API image (via proxy)
+// 2. If fails, try Unsplash placeholder
+// 3. If both fail, show gradient with product name
 export function ProductImage({
   src,
   alt,
@@ -15,16 +18,22 @@ export function ProductImage({
   seed?: string;
 }) {
   const [failed, setFailed] = useState(false);
+  const [triedPlaceholder, setTriedPlaceholder] = useState(false);
+  
   const abs = imageUrl(src);
-  const showFallback = !abs || failed;
+  const placeholder = getPlaceholderImage(seed);
+  
+  // Determine which image to try
+  const shouldShowFallback = !abs || (failed && triedPlaceholder);
+  const imageSrc = !failed ? abs : placeholder;
 
-  // Deterministic warm gradient per product based on seed
+  // Deterministic warm gradient per product based on seed (last resort)
   const hash = [...(seed || alt)].reduce((n, c) => n + c.charCodeAt(0), 0);
   const hue = 20 + (hash % 60); // Warm tones: 20-80
   const saturation = 30 + (hash % 40); // 30-70%
   const lightness = 60 + (hash % 15); // 60-75%
 
-  if (showFallback) {
+  if (shouldShowFallback) {
     return (
       <div
         className={`relative flex items-end overflow-hidden ${className}`}
@@ -44,9 +53,15 @@ export function ProductImage({
 
   return (
     <img
-      src={abs}
+      src={imageSrc}
       alt={alt}
-      onError={() => setFailed(true)}
+      onError={() => {
+        if (!failed) {
+          setFailed(true);
+        } else {
+          setTriedPlaceholder(true);
+        }
+      }}
       loading="lazy"
       crossOrigin="anonymous"
       className={`object-cover ${className}`}
