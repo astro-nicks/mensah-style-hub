@@ -1,52 +1,25 @@
-import { useState } from "react";
 import { imageUrl } from "@/lib/api";
 
-// Product images from the hackathon API.
-// Falls back to gradient with product name if image unavailable.
+// Display only images from the API. No fallbacks, no gradients.
 export function ProductImage({
   src,
   alt,
   className = "",
-  seed = "",
 }: {
   src?: string;
   alt: string;
   className?: string;
-  seed?: string;
 }) {
-  const [failed, setFailed] = useState(false);
   const abs = imageUrl(src);
-  const showFallback = !abs || failed;
 
-  // Deterministic warm gradient per product based on seed
-  const hash = [...(seed || alt)].reduce((n, c) => n + c.charCodeAt(0), 0);
-  const hue = 20 + (hash % 60); // Warm tones: 20-80
-  const saturation = 30 + (hash % 40); // 30-70%
-  const lightness = 60 + (hash % 15); // 60-75%
-
-  if (showFallback) {
-    return (
-      <div
-        className={`relative flex items-end overflow-hidden ${className}`}
-        style={{
-          background: `linear-gradient(135deg, hsl(${hue} ${saturation}% ${lightness + 8}%) 0%, hsl(${hue} ${saturation}% ${lightness - 8}%) 100%)`,
-        }}
-        aria-label={alt}
-      >
-        <div className="absolute inset-0 opacity-30 [background:radial-gradient(circle_at_30%_20%,rgba(255,255,255,.55),transparent_60%)]" />
-        <div className="relative z-10 p-6">
-          <p className="font-display text-2xl leading-tight text-ink/85">{alt}</p>
-          <p className="mt-2 text-[10px] tracking-luxe text-ink/55">Mensah · Atelier</p>
-        </div>
-      </div>
-    );
+  if (!abs) {
+    return <div className={`bg-gray-200 ${className}`} />;
   }
 
   return (
     <img
       src={abs}
       alt={alt}
-      onError={() => setFailed(true)}
       loading="lazy"
       crossOrigin="anonymous"
       className={`object-cover ${className}`}
